@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Немски Рекции - Master Trainer Pro</title>
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --secondary: #b21f1f;
+            --success: #28a745;
+            --error: #dc3545;
+            --akk: #007bff;
+            --dat: #d63384;
+            --bg-color: #f0f2f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); min-height: 100vh; padding: 10px; color: #333; }
+
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+
+        /* Stats Bar */
+        .stats-bar { display: flex; justify-content: space-between; background: #333; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* Control Panel */
+        .panel { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+        /* Filter Section */
+        .filter-row { display: flex; gap: 10px; margin-bottom: 5px; }
+        .filter-select { flex: 1; padding: 10px; border: 2px solid #eee; border-radius: 8px; background: white; font-size: 0.9em; outline: none; }
+        .filter-select:focus { border-color: var(--primary); }
+        .btn-start { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tgl { flex: 1; min-width: 80px; padding: 10px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: all 0.2s; }
+        .tgl:hover { background: #eef2ff; }
+        .tgl.active { background: var(--primary); color: white; }
+
+        /* --- FLIP CARD --- */
+        .flip-container {
+            perspective: 1000px;
+            width: 100%;
+            height: 320px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .flip-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flip-container.flipped .flip-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .card-front { z-index: 2; transform: rotateY(0deg); }
+        .card-back { transform: rotateY(180deg); z-index: 1; border-top: 5px solid var(--primary); }
+
+        .card-main-text { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
+        .card-sub-text { font-size: 1.1em; color: #666; margin-top: 15px; font-style: italic; }
+        .card-example { margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95em; color: #555; width: 90%; }
+
+        /* Quiz & Write Modes */
+        .main-card { background: white; border-radius: 20px; padding: 25px; min-height: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin-bottom: 20px; }
+        .opt-grid { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; margin-top: 10px; }
+        .opt { padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; font-weight: 600; text-align: center; transition: all 0.2s; font-size: 1.1em; color: #444; }
+        .opt:hover { border-color: var(--primary); background: #f8f9fa; }
+        .opt.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .opt.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        .opt.disabled { pointer-events: none; opacity: 0.8; }
+
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.2em; text-align: center; margin-top: 20px; outline: none; transition: border 0.3s; }
+        input[type="text"]:focus { border-color: var(--primary); }
+
+        /* Feedback Panel */
+        .feedback-panel {
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            background: #f1f8ff;
+            border-left: 5px solid var(--primary);
+            border-radius: 8px;
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .fb-status { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; display: block; }
+        .fb-meaning { color: #555; font-style: italic; margin-bottom: 8px; display: block; }
+        .fb-example { background: rgba(255,255,255,0.6); padding: 8px; border-radius: 5px; font-size: 0.95em; color: #333; }
+
+        .controls { display: flex; gap: 15px; width: 100%; }
+        .btn { flex: 1; padding: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #dfe4ea; color: #2f3542; font-size: 1.1em; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-next { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(26, 42, 108, 0.3); }
+
+        /* Archive Search Section */
+        .archive-section { margin-top: 40px; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .archive-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .search-box { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 15px; font-size: 1em; }
+        .archive-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .archive-item { padding: 10px; background: #f9f9f9; border-left: 4px solid var(--primary); border-radius: 4px; display: flex; flex-direction: column; font-size: 0.9em; }
+        .archive-item strong { color: var(--primary); font-size: 1.1em; }
+        .archive-item small { color: #666; margin-top: 4px; }
+
+        .txt-akk { color: var(--akk); }
+        .txt-dat { color: var(--dat); }
+        .text-hint { font-size: 0.9em; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+
+        @media (max-width: 600px) {
+            .card-main-text { font-size: 1.5em; }
+            .opt { padding: 12px; font-size: 1em; }
+            .btn-group .tgl { font-size: 0.75em; padding: 8px; }
+            .filter-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="stats-bar">
+        <span>Дума: <span id="stat-idx">1</span> / <span id="stat-total">0</span></span>
+        <span>Грешки: <span id="stat-err" style="color:#ff8a8a">0</span></span>
+    </div>
+
+    <div class="panel">
+        <div class="text-hint">Настройки на сесията</div>
+        <div class="filter-row">
+            <select id="filter-rektion" class="filter-select">
+                <option value="all">Всички рекции</option>
+                </select>
+            <select id="filter-count" class="filter-select">
+                <option value="all">Всички думи</option>
+                <option value="10">10 думи</option>
+                <option value="20">20 думи</option>
+                <option value="30">30 думи</option>
+                <option value="50">50 думи</option>
+            </select>
+            <button class="btn-start" onclick="startSession()">🚀 Старт</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #eee; margin: 10px 0;">
+
+        <div class="btn-group">
+            <button class="tgl active" id="m-fc" onclick="setMode('fc')">📚 Карти</button>
+            <button class="tgl" id="m-qz" onclick="setMode('qz')">🎮 Тест</button>
+            <button class="tgl" id="m-rq" onclick="setMode('rq')">🧩 Рекции</button>
+            <button class="tgl" id="m-wr" onclick="setMode('wr')">✍️ Писане</button>
+        </div>
+        <div class="btn-group" style="margin-top:5px">
+            <button class="tgl active" id="s-bgde" onclick="setSide('bgde')">BG ➔ DE</button>
+            <button class="tgl" id="s-debg" onclick="setSide('debg')">DE ➔ BG</button>
+        </div>
+    </div>
+
+    <div id="fc-container" class="flip-container" onclick="flipCard()">
+        <div class="flip-inner">
+            <div class="card-face card-front">
+                <div class="text-hint" id="fc-hint-front">Въпрос</div>
+                <div class="card-main-text" id="fc-front"></div>
+            </div>
+            <div class="card-face card-back">
+                <div class="text-hint">Отговор</div>
+                <div class="card-main-text" id="fc-back-main"></div>
+                <div class="card-sub-text" id="fc-back-sub"></div>
+                <div class="card-example" id="fc-example"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-area" class="main-card" style="display:none">
+        <div id="qz-area" style="width:100%">
+            <div class="text-hint" style="text-align:center;" id="qz-hint">Изберете правилния отговор</div>
+            <div id="qz-q" style="font-weight:bold; text-align:center; font-size:1.6em; margin: 10px 0 20px 0; color: var(--primary);"></div>
+            <div id="qz-opts" class="opt-grid"></div>
+        </div>
+
+        <div id="wr-area" style="width:100%; display:none;">
+            <div class="text-hint" style="text-align:center;">Напишете отговора</div>
+            <div id="wr-q" style="font-weight:bold; text-align:center; font-size:1.6em; margin: 10px 0; color: var(--primary);"></div>
+            <input type="text" id="wr-i" placeholder="..." autocomplete="off" onkeypress="if(event.key==='Enter') checkWrite()">
+            <button class="btn" style="width:100%; margin-top:15px; background:#e0e0e0;" onclick="checkWrite()" id="wr-check-btn">Провери</button>
+        </div>
+
+        <div id="feedback-panel" class="feedback-panel">
+            <span id="fb-status" class="fb-status"></span>
+            <span id="fb-meaning" class="fb-meaning"></span>
+            <div id="fb-example" class="fb-example"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="move(-1)">⬅️ Предишна</button>
+        <button class="btn btn-next" onclick="move(1)">Следваща ➡️</button>
+    </div>
+
+    <div class="archive-section">
+        <div class="archive-header">
+            🔍 Архив / Търсене
+            <span style="font-size:0.8em; color:#888;" id="archive-count"></span>
+        </div>
+        <input type="text" class="search-box" id="search-input" placeholder="Търси на немски или български..." onkeyup="filterArchive()">
+        <div class="archive-list" id="archive-list"></div>
+    </div>
+</div>
+
+<script>
+// --- DATA FROM SOURCE (UNCHANGED) ---
+const rektionen = [
+    { verb: "abbiegen", rektion: "in + A", bg: "завивам на", example: "Biegen Sie in die Goethestraße ein.", prep: "in" },
+    { verb: "abhängen", rektion: "von + D", bg: "зависи от", example: "Alles hängt vom Wetter ab.", prep: "von" },
+    { verb: "abholen", rektion: "+ A + von + D", bg: "посрещам някого от някъде", example: "Ich hole dich vom Bahnhof ab.", prep: "von" },
+    { verb: "abschreiben", rektion: "von + D", bg: "преписвам от", example: "Er schreibt von seinem Nachbarn ab.", prep: "von" },
+    { verb: "achten", rektion: "auf + A", bg: "внимавам за / обръщам внимание на", example: "Achten Sie auf die Verkehrszeichen.", prep: "auf" },
+    { verb: "amüsieren (sich)", rektion: "über + A", bg: "забавлявам се на", example: "Wir haben uns über den Film amüsiert.", prep: "über" },
+    { verb: "anbieten", rektion: "+ D + A", bg: "предлагам нещо на някого", example: "Er bietet mir einen Kaffee an.", prep: "D" },
+    { verb: "anfangen", rektion: "mit + D", bg: "започвам с", example: "Wann fängst du mit der Arbeit an?", prep: "mit" },
+    { verb: "ankommen", rektion: "an + D", bg: "пристигам в", example: "Wir kommen am Bahnhof an.", prep: "an" },
+    { verb: "ankommen", rektion: "auf + A", bg: "зависи от", example: "Es kommt auf die Situation an.", prep: "auf" },
+    { verb: "anmelden (sich)", rektion: "bei + D für + A", bg: "записвам / регистрирам се при някого за нещо", example: "Ich melde mich beim Kurs für den Test an.", prep: "bei" },
+    { verb: "anpassen (sich)", rektion: "an + A", bg: "нагаждам се / приспособявам се към", example: "Du musst dich an die Regeln anpassen.", prep: "an" },
+    { verb: "antworten", rektion: "auf + A", bg: "отговарям на", example: "Antworte bitte на meine Frage.", prep: "auf" },
+    { verb: "arbeiten", rektion: "an + D", bg: "работя върху", example: "Er arbeitet an einem neuen Projekt.", prep: "an" },
+    { verb: "ärgern (sich)", rektion: "über + A", bg: "ядосвам се на", example: "Ärgere dich nicht über ihn.", prep: "über" },
+    { verb: "aufhören", rektion: "mit + D", bg: "преставам / спирам с", example: "Hör mit dem Lärm auf!", prep: "mit" },
+    { verb: "aufpassen", rektion: "auf + A", bg: "внимавам за / наглеждам", example: "Pass auf die Kinder auf!", prep: "auf" },
+    { verb: "aufregen (sich)", rektion: "über + A", bg: "вълнувам се / нервирам се за", example: "Reg dich nicht over Kleinigkeiten auf.", prep: "über" },
+    { verb: "aufsteigen", rektion: "aus + D", bg: "слизам от", example: "Wir steigen aus dem Bus aus.", prep: "aus" },
+    { verb: "ausgehen", rektion: "mit + D", bg: "излизам с", example: "Gehst du mit mir aus?", prep: "mit" },
+    { verb: "auslachen", rektion: "+ A", bg: "подигравам някого", example: "Lach mich nicht aus!", prep: "A" },
+    { verb: "äußern (sich)", rektion: "über + A", bg: "изказвам се / изразявам се за", example: "Er äußerte sich über die Pläne.", prep: "über" },
+    { verb: "bedanken (sich)", rektion: "bei + D für + A", bg: "благодаря на някого за нещо", example: "Ich bedanke mich bei dir für die Hilfe.", prep: "bei" },
+    { verb: "beeilen (sich)", rektion: "mit + D", bg: "бързам с нещо", example: "Beeil dich mit den Hausaufgaben!", prep: "mit" },
+    { verb: "befassen (sich)", rektion: "mit + D", bg: "занимавам се / справям се с", example: "Ich befasse mich mit diesem Thema.", prep: "mit" },
+    { verb: "befreien (sich)", rektion: "von + D", bg: "освобождавам (се) от", example: "Er befreite sich von seinen Sorgen.", prep: "von" },
+    { verb: "begegnen", rektion: "+ D", bg: "срещам някого (случайно)", example: "Ich bin ihm im Park begegnet.", prep: "D" },
+    { verb: "beginnen", rektion: "mit + D", bg: "започвам с", example: "Wir beginnen mit der Lektion.", prep: "mit" },
+    { verb: "beglückwünschen", rektion: "+ A + zu + D", bg: "поздравявам някого за нещо", example: "Ich beglückwünsche dich zum Erfolg.", prep: "zu" },
+    { verb: "begründen", rektion: "mit + D", bg: "обосновавам с", example: "Er begründet das mit seinem Alter.", prep: "mit" },
+    { verb: "beitragen", rektion: "zu + D", bg: "допринасям за", example: "Jeder trägt zum Erfolg bei.", prep: "zu" },
+    { verb: "bekannt sein", rektion: "für + A", bg: "известен съм с", example: "Er ist für seinen Humor bekannt.", prep: "für" },
+    { verb: "beklagen (sich)", rektion: "bei + D über + A", bg: "оплаквам се на някого от нещо", example: "Sie beklagt sich при mir über den Lärm.", prep: "bei" },
+    { verb: "bemühen (sich)", rektion: "um + A", bg: "старая се за / стремя се към", example: "Er bemüht sich um eine Stelle.", prep: "um" },
+    { verb: "beneiden", rektion: "+ A + um + A", bg: "завиждам на някого за нещо", example: "Ich beneide dich um deinen Mut.", prep: "um" },
+    { verb: "benutzen", rektion: "zu + D", bg: "използвам за", example: "Man benutzt es zum Schneiden.", prep: "zu" },
+    { verb: "beraten (sich)", rektion: "mit + D", bg: "съветвам се / консултирам се с", example: "Ich berate mich mit meinem Chef.", prep: "mit" },
+    { verb: "berichten", rektion: "über + A / von + D", bg: "докладвам за / разказвам за", example: "Er berichtet über das Spiel.", prep: "über" },
+    { verb: "beruhen", rektion: "auf + D", bg: "основавам се на / почивам на", example: "Das beruht auf Tatsachen.", prep: "auf" },
+    { verb: "beschäftigen (sich)", rektion: "mit + D", bg: "занимавам се с", example: "Ich beschäftige mich mit Kunst.", prep: "mit" },
+    { verb: "beschränken (sich)", rektion: "auf + A", bg: "ограничавам (се) до", example: "Beschränken Sie sich auf das Wichtigste.", prep: "auf" },
+    { verb: "beschweren (sich)", rektion: "bei + D über + A", bg: "оплаквам се на някого от нещо", example: "Wir beschweren uns beim Chef über die Hitze.", prep: "bei" },
+    { verb: "bestehen", rektion: "aus + D", bg: "състоя се от", example: "Die Gruppe besteht aus zehn Leuten.", prep: "aus" },
+    { verb: "bestehen", rektion: "auf + D", bg: "настоявам на", example: "Ich bestehe auf einer Antwort.", prep: "auf" },
+    { verb: "beteiligen (sich)", rektion: "an + D", bg: "участвам в", example: "Beteiligst du dich an den Kosten?", prep: "an" },
+    { verb: "betrachten", rektion: "als + A", bg: "разглеждам / считам като", example: "Ich betrachte das als Kompliment.", prep: "als" },
+    { verb: "bewahren", rektion: "vor + D", bg: "пазя / закрилям от", example: "Gott bewahre uns vor dem Krieg.", prep: "vor" },
+    { verb: "bewerben (sich)", rektion: "um + A", bg: "кандидатствам за", example: "Ich bewerbe mich um diesen Job.", prep: "um" },
+    { verb: "beziehen (sich)", rektion: "auf + A", bg: "позовавам се на", example: "Ich beziehe mich auf Ihr Schreiben.", prep: "auf" },
+    { verb: "bitten", rektion: "+ A + um + A", bg: "моля някого за нещо", example: "Darf ich dich um Hilfe bitten?", prep: "um" },
+    { verb: "bleiben", rektion: "bei + D", bg: "оставам при / на", example: "Ich bleibe bei meiner Meinung.", prep: "bei" },
+    { verb: "brauchen", rektion: "+ A + zu + D", bg: "нуждая се от нещо за", example: "Ich brauche Zeit zum Nachdenken.", prep: "zu" },
+    { verb: "danken", rektion: "+ D + für + A", bg: "благодаря на някого за нещо", example: "Ich danke dir für das Geschenk.", prep: "für" },
+    { verb: "denken", rektion: "an + A", bg: "мисля за", example: "Denk an den Termin!", prep: "an" },
+    { verb: "dienen", rektion: "zu + D / als + N", bg: "служа за / като", example: "Das dient zum Schutz.", prep: "zu" },
+    { verb: "diskutieren", rektion: "mit + D über + A", bg: "дискутирам с някого за нещо", example: "Wir diskutieren mit ihm über Politik.", prep: "mit" },
+    { verb: "distanzieren (sich)", rektion: "von + D", bg: "дистанцирам се от", example: "Er distanziert sich von der Gruppe.", prep: "von" },
+    { verb: "drehen (sich)", rektion: "um + A", bg: "върти се около", example: "Alles dreht sich um das Geld.", prep: "um" },
+    { verb: "eignen (sich)", rektion: "für + A / zu + D", bg: "подходящ съм за", example: "Das eignet sich für Anfänger.", prep: "für" },
+    { verb: "einigen (sich)", rektion: "auf + A", bg: "споразумявам се за", example: "Wir einigten uns auf einen Kompromiss.", prep: "auf" },
+    { verb: "einladen", rektion: "+ A + zu + D", bg: "каня някого на нещо", example: "Ich lade dich zur Party ein.", prep: "zu" },
+    { verb: "einlassen (sich)", rektion: "auf + A", bg: "пускам се в / захващам се с", example: "Er ließ sich auf das Abenteuer ein.", prep: "auf" },
+    { verb: "einmischen (sich)", rektion: "in + A", bg: "бъркам се в / меся се в", example: "Misch dich nicht in meine Sachen ein!", prep: "in" },
+    { verb: "einsetzen (sich)", rektion: "für + A", bg: "застъпвам се за / полагам усилия за", example: "Sie setzt sich für die Umwelt ein.", prep: "für" },
+    { verb: "einsteigen", rektion: "in + A", bg: "качвам се в", example: "Steig in den Zug ein!", prep: "in" },
+    { verb: "einstellen (sich)", rektion: "auf + A", bg: "настройвам се за / подготвям се за", example: "Stell dich auf Regen ein.", prep: "auf" },
+    { verb: "einziehen", rektion: "in + A", bg: "нанасям се в", example: "Wir ziehen in die neue Wohnung ein.", prep: "in" },
+    { verb: "ekeln (sich)", rektion: "vor + D", bg: "отвращавам се от", example: "Ich ekle mich vor Spinnen.", prep: "vor" },
+    { verb: "enden", rektion: "mit + D", bg: "завършвам с", example: "Die Geschichte endet mit einem Lied.", prep: "mit" },
+    { verb: "engagieren (sich)", rektion: "für + A", bg: "ангажирам се с / за", example: "Er engagiert sich für Kinder.", prep: "für" },
+    { verb: "entscheiden (sich)", rektion: "für / gegen + A", bg: "решавам се за / против", example: "Ich entscheide mich für das rote Kleid.", prep: "für" },
+    { verb: "entschließen (sich)", rektion: "zu + D", bg: "решавам се на", example: "Er entschloss sich zur Kündigung.", prep: "zu" },
+    { verb: "entschuldigen (sich)", rektion: "bei + D für + A", bg: "извинявам се на някого за нещо", example: "Er entschuldigt sich bei ihr für den Fehler.", prep: "bei" },
+    { verb: "entstehen", rektion: "aus + D", bg: "възниквам / произлизам от", example: "Aus der Idee entstand ein Projekt.", prep: "aus" },
+    { verb: "erfahren", rektion: "von + D", bg: "узнавам / научавам от", example: "Ich habe von dem Unfall erfahren.", prep: "von" },
+    { verb: "erholen (sich)", rektion: "von + D", bg: "възстановявам се / почивам си от", example: "Hast du dich vom Stress erholt?", prep: "von" },
+    { verb: "erinnern (sich)", rektion: "an + A", bg: "спомням си за", example: "Erinnerst du dich an mich?", prep: "an" },
+    { verb: "erkennen", rektion: "+ A + an + D", bg: "разпознавам по", example: "Ich erkenne ihn an seiner Stimme.", prep: "an" },
+    { verb: "erkundigen (sich)", rektion: "bei + D nach + D", bg: "осведомявам се от някого за нещо", example: "Erkundige dich nach dem Preis.", prep: "bei" },
+    { verb: "erschrecken", rektion: "vor + D", bg: "уплашвам се от", example: "Erschrick nicht vor dem Hund!", prep: "vor" },
+    { verb: "erwarten", rektion: "von + D", bg: "очаквам от", example: "Das erwarte ich von dir.", prep: "von" },
+    { verb: "erzählen", rektion: "von + D / über + A", bg: "разказвам за", example: "Erzähl mir von deiner Reise.", prep: "von" },
+    { verb: "erziehen", rektion: "+ A + zu + D", bg: "възпитавам някого в / на", example: "Sie erzieht das Kind zur Höflichkeit.", prep: "zu" },
+    { verb: "fehlen", rektion: "an + D", bg: "липсва (нещо)", example: "Es fehlt an Zeit.", prep: "an" },
+    { verb: "fliehen", rektion: "vor + D", bg: "бягам от", example: "Sie fliehen vor dem Regen.", prep: "vor" },
+    { verb: "flüchten", rektion: "vor + D", bg: "избягвам от", example: "Er flüchtet vor der Polizei.", prep: "vor" },
+    { verb: "folgen", rektion: "+ D", bg: "последвам някого", example: "Folgen Sie mir bitte.", prep: "D" },
+    { verb: "fragen", rektion: "+ A + nach + D", bg: "питам някого за нещо", example: "Er fragt nach dem Weg.", prep: "nach" },
+    { verb: "freuen (sich)", rektion: "auf + A / über + A", bg: "радвам се на (бъдеще / минало)", example: "Ich freue mich auf den Urlaub.", prep: "auf" },
+    { verb: "führen", rektion: "zu + D", bg: "водя до", example: "Das führt zu nichts.", prep: "zu" },
+    { verb: "fürchten (sich)", rektion: "vor + D", bg: "боя се / страхувам се от", example: "Fürchtest du dich vor der Dunkelheit?", prep: "vor" },
+    { verb: "garantieren", rektion: "für + A", bg: "гарантирам за", example: "Ich garantiere für seine Qualität.", prep: "für" },
+    { verb: "geben (es)", rektion: "+ A", bg: "има", example: "Es gibt ein Problem.", prep: "A" },
+    { verb: "gebrauchen", rektion: "zu + D", bg: "използвам / употребявам за", example: "Das kann man zum Kochen gebrauchen.", prep: "zu" },
+    { verb: "gedenken", rektion: "+ G", bg: "почитам паметта на", example: "Wir gedenken der Toten.", prep: "G" },
+    { verb: "gefallen", rektion: "+ D", bg: "харесвам се на", example: "Das gefällt mir.", prep: "D" },
+    { verb: "gehen (es)", rektion: "um + A", bg: "става дума за", example: "Es geht um deine Zukunft.", prep: "um" },
+    { verb: "gehören", rektion: "zu + D", bg: "принадлежа на / към", example: "Das gehört zu meinen Aufgaben.", prep: "zu" },
+    { verb: "gelingen", rektion: "+ D", bg: "удава ми се / успявам в", example: "Das ist mir gut gelungen.", prep: "D" },
+    { verb: "gelten", rektion: "als + N", bg: "важа / считам се за", example: "Er gilt als Experte.", prep: "als" },
+    { verb: "genießen", rektion: "+ A", bg: "наслаждавам се на", example: "Genießen Sie den Tag!", prep: "A" },
+    { verb: "geraten", rektion: "in + A", bg: "попадам в", example: "Er ist in eine schwierige Lage geraten.", prep: "in" },
+    { verb: "gewöhnen (sich)", rektion: "an + A", bg: "свиквам с", example: "Я съм се gewöhnt an das Klima.", prep: "an" },
+    { verb: "glauben", rektion: "an + A", bg: "вярвам на / в", example: "Glaubst du an Wunder?", prep: "an" },
+    { verb: "gratulieren", rektion: "+ D + zu + D", bg: "поздравявам някого за нещо", example: "Ich gratuliere dir zum Geburtstag.", prep: "zu" },
+    { verb: "grenzen", rektion: "an + A", bg: "гранича с", example: "Das Haus grenzt an den Park.", prep: "an" },
+    { verb: "halten", rektion: "von + D / für + A / an + A", bg: "мисля за / считам за / придържам се към", example: "Was hältst du von dem Film?", prep: "von" },
+    { verb: "handeln", rektion: "mit + D / von + D / um + A", bg: "търгувам с / разказва за / става дума за", example: "Das Buch handelt von der Liebe.", prep: "von" },
+    { verb: "helfen", rektion: "+ D + bei + D", bg: "помагам на някого при нещо", example: "Hilf mir beim Aufräumen.", prep: "bei" },
+    { verb: "herrschen", rektion: "über + A", bg: "царя / господствам над", example: "Er herrscht über das Volk.", prep: "über" },
+    { verb: "hindern", rektion: "+ A + an + D", bg: "преча на някого за", example: "Er hinderte mich an der Arbeit.", prep: "an" },
+    { verb: "hinweisen", rektion: "auf + A", bg: "обръщам внимание върху", example: "Darf ich auf diesen Fehler hinweisen?", prep: "auf" },
+    { verb: "hoffen", rektion: "auf + A", bg: "надявам се на", example: "Wir hoffen auf besseres Wetter.", prep: "auf" },
+    { verb: "hören", rektion: "на + A / von + D", bg: "слушам / чувам за", example: "Ich habe nichts von ihm gehört.", prep: "von" },
+    { verb: "informieren (sich)", rektion: "über + A", bg: "информирам (се) за", example: "Informieren Sie sich über die Preise.", prep: "über" },
+    { verb: "interessieren (sich)", rektion: "für + A", bg: "интересувам се за", example: "Interessierst du dich für Sport?", prep: "für" },
+    { verb: "irren (sich)", rektion: "in + D", bg: "заблуждавам се / греша в", example: "Ich habe mich im Datum geirrt.", prep: "in" },
+    { verb: "kämpfen", rektion: "für / gegen / um + A", bg: "боря се за / против", example: "Sie kämpfen für ihre Rechte.", prep: "für" },
+    { verb: "kennen", rektion: "als + A", bg: "познавам като", example: "Ich kenne ihn als netten Kerl.", prep: "als" },
+    { verb: "klagen", rektion: "über + A", bg: "оплаквам се от", example: "Er klagt über Kopfschmerzen.", prep: "über" },
+    { verb: "kommen", rektion: "zu + D / auf + A", bg: "стигам до / сещам се за", example: "Wie kommst du auf diese Idee?", prep: "auf" },
+    { verb: "konzentrieren (sich)", rektion: "auf + A", bg: "концентрирам се върху", example: "Konzentrier dich auf deine Arbeit!", prep: "auf" },
+    { verb: "kümmern (sich)", rektion: "um + A", bg: "грижа се за", example: "Sie kümmert sich um die Kinder.", prep: "um" },
+    { verb: "lachen", rektion: "über + A", bg: "смея се на", example: "Alle lachen über seinen Witz.", prep: "über" },
+    { verb: "landen", rektion: "auf / in + D", bg: "кацам на / попадам в", example: "Das Flugzeug landet auf der Bahn.", prep: "auf" },
+    { verb: "lassen", rektion: "von + D", bg: "отказвам се от / преставам с", example: "Lass von deinem Plan ab.", prep: "von" },
+    { verb: "lächeln", rektion: "über + A", bg: "надсмивам се над", example: "Er lächelt über meine Naivität.", prep: "über" },
+    { verb: "leben", rektion: "von + D", bg: "живея от", example: "Er lebt von seiner Rente.", prep: "von" },
+    { verb: "leiden", rektion: "an + D / unter + D", bg: "страдам от (болест / обстоятелство)", example: "Er leidet an einer Allergie.", prep: "an" },
+    { verb: "lernen", rektion: "von + D / aus + D", bg: "уча се от", example: "Wir lernen aus unseren Fehlern.", prep: "aus" },
+    { verb: "lesen", rektion: "über + A / von + D", bg: "чета за / от", example: "Ich lese ein Buch über Geschichte.", prep: "über" },
+    { verb: "liegen", rektion: "an + D", bg: "дължи се на", example: "Es liegt an dir.", prep: "an" },
+    { verb: "liefern", rektion: "an + A", bg: "доставям на", example: "Die Ware wird an Sie geliefert.", prep: "an" },
+    { verb: "mangeln", rektion: "an + D", bg: "има липса / недостиг от", example: "Es mangelt an frischem Wasser.", prep: "an" },
+    { verb: "meinen", rektion: "zu + D / über + A", bg: "мисля / смятам за", example: "Was meinst du zu diesem Thema?", prep: "zu" },
+    { verb: "melden (sich)", rektion: "bei + D", bg: "обаждам се на / регистрирам се в", example: "Melde dich bitte bei mir.", prep: "bei" },
+    { verb: "messen (sich)", rektion: "mit + D", bg: "сравнявам се с", example: "Ich möchte mich mit den Besten messen.", prep: "mit" },
+    { verb: "motivieren", rektion: "zu + D", bg: "мотивирам за", example: "Das motiviert mich zum Lernen.", prep: "zu" },
+    { verb: "nachdenken", rektion: "über + A", bg: "замислям се върху", example: "Denk over mein Angebot nach.", prep: "über" },
+    { verb: "nachschlagen", rektion: "in + D", bg: "проверявам в", example: "Schlag das Wort im Buch nach.", prep: "in" },
+    { verb: "neigen", rektion: "zu + D", bg: "склонен съм към", example: "Er neigt zur Übertreibung.", prep: "zu" },
+    { verb: "nützen", rektion: "zu + D", bg: "използвам за", example: "Das nützt zu nichts.", prep: "zu" },
+    { verb: "orientieren (sich)", rektion: "an + D", bg: "ориентирам се по", example: "Wir orientieren uns an den Sternen.", prep: "an" },
+    { verb: "packen", rektion: "an + D", bg: "хващам за", example: "Er packt ihn am Arm.", prep: "an" },
+    { verb: "passen", rektion: "zu + D / auf + A", bg: "пасва към / внимавам за", example: "Die Krawatte passt zum Hemd.", prep: "zu" },
+    { verb: "profitieren", rektion: "von + D", bg: "профитирам / печеля от", example: "Wir profitieren von der Erfahrung.", prep: "von" },
+    { verb: "protestieren", rektion: "gegen + A", bg: "протестирам против", example: "Sie protestieren gegen das Gesetz.", prep: "gegen" },
+    { verb: "prüfen", rektion: "на + A / in + D", bg: "изпитвам върху / по", example: "Er prüft mich in Mathe.", prep: "in" },
+    { verb: "rächen (sich)", rektion: "an + D / für + A", bg: "отмъщавам си на някого за", example: "Er rächt sich an seinem Feind.", prep: "an" },
+    { verb: "reagieren", rektion: "auf + A", bg: "реагирам на", example: "Wie reagiert er auf die Nachricht?", prep: "auf" },
+    { verb: "rechnen", rektion: "mit + D / auf + A", bg: "разчитам / очаквам", example: "Ich rechne mit deiner Hilfe.", prep: "mit" },
+    { verb: "reden", rektion: "über + A / von + D / mit + D", bg: "говоря за / с", example: "Wir reden über unsere Zukunft.", prep: "über" },
+    { verb: "referieren", rektion: "über + A", bg: "изпращам реферат / докладвам за", example: "Er referiert über das Klima.", prep: "über" },
+    { verb: "retten", rektion: "vor + D", bg: "спасявам от", example: "Er rettete das Kind vor dem Feuer.", prep: "vor" },
+    { verb: "richten (sich)", rektion: "nach + D / an + A", bg: "насочвам се / придържам се / обръщам се към", example: "Wir richten uns nach Ihren Wünschen.", prep: "nach" },
+    { verb: "riechen", rektion: "nach + D", bg: "ухая / мириша на", example: "Es riecht nach Blumen.", prep: "nach" },
+    { verb: "rufen", rektion: "nach + D / um + A", bg: "викам за", example: "Er ruft nach Hilfe.", prep: "nach" },
+    { verb: "sagen", rektion: "über + A / zu + D", bg: "казвам за / мнение за", example: "Was hat er über mich gesagt?", prep: "über" },
+    { verb: "sammeln", rektion: "für + A", bg: "събирам за", example: "Wir sammeln für die Armen.", prep: "für" },
+    { verb: "schämen (sich)", rektion: "vor + D / für + A", bg: "срамувам се пред / за", example: "Ich schäme mich für dich.", prep: "für" },
+    { verb: "schauen", rektion: "auf + A", bg: "гледам към", example: "Schau auf die Uhr!", prep: "auf" },
+    { verb: "scheiden (sich lassen)", rektion: "von + D", bg: "развеждам се от", example: "Sie lässt sich von ihm scheiden.", prep: "von" },
+    { verb: "schicken", rektion: "an + A / zu + D", bg: "пращам на", example: "Ich schicke das Paket an dich.", prep: "an" },
+    { verb: "schimpfen", rektion: "über + A / mit + D", bg: "ругая / карам се на", example: "Mama schimpft mit dem Kind.", prep: "mit" },
+    { verb: "schließen", rektion: "aus + D", bg: "заключавам / правя извод от", example: "Was schließen Sie daraus?", prep: "aus" },
+    { verb: "schmecken", rektion: "nach + D", bg: "има вкус на", example: "Das schmeckt nach Schokolade.", prep: "nach" },
+    { verb: "schreiben", rektion: "an + A / über + A / von + D", bg: "пиша на / за", example: "Ich schreibe an meine Mutter.", prep: "an" },
+    { verb: "schützen (sich)", rektion: "vor + D / gegen + A", bg: "пазя (се) от", example: "Schützen Sie sich vor der Sonne.", prep: "vor" },
+    { verb: "schwärmen", rektion: "von + D / für + A", bg: "мечтая за / запален съм по", example: "Sie schwärmt für klassische Musik.", prep: "für" },
+    { verb: "schweigen", rektion: "zu + D", bg: "мълча по", example: "Er schweigt zu den Vorwürfen.", prep: "zu" },
+    { verb: "sehen", rektion: "nach + D", bg: "наглеждам / грижа се за", example: "Ich sehe nach dem Rechten.", prep: "nach" },
+    { verb: "sehnen (sich)", rektion: "nach + D", bg: "копнея за", example: "Ich sehne mich nach Ruhe.", prep: "nach" },
+    { verb: "siegen", rektion: "über + A", bg: "побеждавам над", example: "Wir siegten über den Gegner.", prep: "über" },
+    { verb: "sorgen", rektion: "für + A", bg: "грижа се за / подсигурявам", example: "Sorgen Sie für Ordnung!", prep: "für" },
+    { verb: "Sorgen machen (sich)", rektion: "um + A", bg: "притеснявам се за", example: "Mach dir keine Sorgen um mich.", prep: "um" },
+    { verb: "spezialisieren (sich)", rektion: "auf + A", bg: "специализирам се в", example: "Er hat sich auf Chirurgie spezialisiert.", prep: "auf" },
+    { verb: "spielen", rektion: "um + A / mit + D", bg: "играя за / с", example: "Sie spielen um den Sieg.", prep: "um" },
+    { verb: "sprechen", rektion: "mit + D / über + A / von + D", bg: "говоря с / за", example: "Ich spreche mit ihm über den Plan.", prep: "mit" },
+    { verb: "stammen", rektion: "aus + D", bg: "произхождам от", example: "Er stammt aus Italien.", prep: "aus" },
+    { verb: "staunen", rektion: "über + A", bg: "чудя се / смайвам се на", example: "Ich staune über dein Wissen.", prep: "über" },
+    { verb: "sterben", rektion: "an + D / für + A", bg: "умирам от / за", example: "Er starb an den Folgen.", prep: "an" },
+    { verb: "stimmen", rektion: "für / gegen + A", bg: "гласувам за / против", example: "Wer stimmt für den Vorschlag?", prep: "für" },
+    { verb: "stören", rektion: "+ A + bei + D", bg: "преча на някого за нещо", example: "Stör mich nicht beim Lesen!", prep: "bei" },
+    { verb: "streiten (sich)", rektion: "mit + D / über + A", bg: "споря с някого за нещо", example: "Sie streiten mit mir über Politik.", prep: "mit" },
+    { verb: "suchen", rektion: "nach + D", bg: "търся нещо / някого", example: "Er sucht nach seinem Schlüssel.", prep: "nach" },
+    { verb: "täuschen (sich)", rektion: "in + D", bg: "лъжа се / заблуждавам се в", example: "Ich habe mich in ihm getäuscht.", prep: "in" },
+    { verb: "teilen", rektion: "mit + D", bg: "споделям с", example: "Teilst du mit mir das Brot?", prep: "mit" },
+    { verb: "teilnehmen", rektion: "an + D", bg: "участвам в", example: "Nimmst du an dem Kurs teil?", prep: "an" },
+    { verb: "telefonieren", rektion: "mit + D", bg: "говоря по телефона с", example: "Ich telefoniere mit meiner Mutter.", prep: "mit" },
+    { verb: "trauern", rektion: "um + A", bg: "тъгувам / жалея за", example: "Wir trauern um den Freund.", prep: "um" },
+    { verb: "träumen", rektion: "von + D", bg: "мечтая за / сънувам за", example: "Я съм мечтая за морето.", prep: "von" },
+    { verb: "trennen (sich)", rektion: "von + D", bg: "разделям се от", example: "Sie trennte sich von ihrem Freund.", prep: "von" },
+    { verb: "trinken", rektion: "auf + A", bg: "пия за", example: "Trinken wir auf dein Wohl!", prep: "auf" },
+    { verb: "überraschen", rektion: "+ A + mit + D", bg: "изненадвам някого с нещо", example: "Er überraschte mich mit Blumen.", prep: "mit" },
+    { verb: "überreden", rektion: "+ A + zu + D", bg: "придумвам / убеждавам някого за", example: "Er überredete mich zum Mitgehen.", prep: "zu" },
+    { verb: "übersetzen", rektion: "aus + D / in + A", bg: "превеждам от / на", example: "Übersetzen Sie vom Deutschen ins Bulgarische.", prep: "из" },
+    { verb: "überzeugen (sich)", rektion: "von + D", bg: "убеждавам (се) в", example: "Ich habe mich von der Qualität überzeugt.", prep: "von" },
+    { verb: "umdrehen (sich)", rektion: "nach + D", bg: "обръщам се след", example: "Er drehte sich nach ihr um.", prep: "nach" },
+    { verb: "umgeben", rektion: "von + D", bg: "заобиколен от", example: "Das Haus е заобиколен von Bäumen.", prep: "von" },
+    { verb: "umgehen", rektion: "mit + D", bg: "боравя / отнасям се с", example: "Er kann gut mit Kindern umgehen.", prep: "mit" },
+    { verb: "umziehen", rektion: "in + A", bg: "премествам се в", example: "Ich ziehe in eine neue Stadt um.", prep: "in" },
+    { verb: "unterbrechen", rektion: "+ A + bei + D", bg: "прекъсвам някого при", example: "Unterbrich mich nicht beim Sprechen!", prep: "bei" },
+    { verb: "unterhalten (sich)", rektion: "über + A / mit + D", bg: "разговарям за / с някого", example: "Wir unterhalten uns über Musik.", prep: "über" },
+    { verb: "unterscheiden (sich)", rektion: "von + D", bg: "различавам се от", example: "Er unterscheidet sich von seinem Bruder.", prep: "von" },
+    { verb: "untersuchen", rektion: "auf + A", bg: "изследвам за", example: "Das Blut wird auf Viren untersucht.", prep: "auf" },
+    { verb: "verabreden (sich)", rektion: "mit + D", bg: "уговарям се с", example: "Ich habe mich mit ihr verabredet.", prep: "mit" },
+    { verb: "verabschieden (sich)", rektion: "von + D", bg: "сбогувам се с", example: "Ich verabschiede mich von euch.", prep: "von" },
+    { verb: "verbinden", rektion: "mit + D", bg: "свързвам с", example: "Verbinden Sie mich bitte mit der Zentrale.", prep: "mit" },
+    { verb: "verdienen", rektion: "mit + D", bg: "печеля / изкарвам с", example: "Er verdient sein Geld mit Schreiben.", prep: "mit" },
+    { verb: "verfügen", rektion: "über + A", bg: "разполагам с", example: "Sie verfügt über viel Geld.", prep: "über" },
+    { verb: "vergleichen", rektion: "+ A + mit + D", bg: "сравнявам нещо с нещо", example: "Vergleichen Sie die Preise!", prep: "mit" },
+    { verb: "verhalten (sich)", rektion: "zu + D", bg: "държа се / отнасям се към", example: "Er verhält sich freundlich zu uns.", prep: "zu" },
+    { verb: "verlangen", rektion: "von + D", bg: "изисквам от", example: "Das verlange ich von dir.", prep: "von" },
+    { verb: "verlassen (sich)", rektion: "auf + A", bg: "разчитам на", example: "Du kannst dich auf mich verlassen.", prep: "auf" },
+    { verb: "verlieben (sich)", rektion: "in + A", bg: "влюбвам се в", example: "Sie е влюбен in него.", prep: "in" },
+    { verb: "vermieten", rektion: "+ A + an + D", bg: "отдавам нещо под наем на някого", example: "Er vermietet das Haus an uns.", prep: "an" },
+    { verb: "verreisen", rektion: "nach + D", bg: "заминавам за / пътувам до", example: "Er е заминал nach Berlin.", prep: "nach" },
+    { verb: "verstehen", rektion: "von + D", bg: "разбирам от", example: "Verstehst du etwas von Autos?", prep: "von" },
+    { verb: "verstoßen", rektion: "gegen + A", bg: "провинявам се против / нарушавам", example: "Er verstieß gegen die Regeln.", prep: "против" },
+    { verb: "vertrauen", rektion: "auf + A", bg: "уповавам се на", example: "Ich vertraue auf deine Hilfe.", prep: "на" },
+    { verb: "verwandeln (sich)", rektion: "in + A", bg: "превръщам (се) в", example: "Er verwandelte sich in einen Frosch.", prep: "in" },
+    { verb: "verwechseln", rektion: "+ A + mit + D", bg: "обърквам някого с друг", example: "Ich habe dich mit ihm verwechselt.", prep: "mit" },
+    { verb: "verzeihen", rektion: "+ D", bg: "прощавам на", example: "Verzeih mir bitte!", prep: "D" },
+    { verb: "verzichten", rektion: "auf + A", bg: "отказвам се от", example: "Ich verzichte auf den Nachtisch.", prep: "auf" },
+    { verb: "verzweifeln", rektion: "an + D", bg: "отчайвам се от", example: "Zweifle nicht an dir selbst.", prep: "an" },
+    { verb: "vorbeifahren", rektion: "an + D", bg: "минавам с превозно ср. покрай", example: "Fahren Sie am Rathaus vorbei.", prep: "an" },
+    { verb: "vorbeigehen", rektion: "an / bei + D", bg: "минавам покрай / отбивам се", example: "Geh an dem Laden vorbei.", prep: "an" },
+    { verb: "vorbeikommen", rektion: "an + D", bg: "минавам покрай", example: "Komm an meinem Büro vorbei.", prep: "an" },
+    { verb: "vorbereiten (sich)", rektion: "auf + A", bg: "подготвям се за", example: "Ich bereite mich auf den Test vor.", prep: "auf" },
+    { verb: "warnen", rektion: "+ A + vor + D", bg: "предупреждавам някого за", example: "Я съм предупредил vor der Gefahr.", prep: "vor" },
+    { verb: "warten", rektion: "auf + A", bg: "чакам някого / нещо", example: "Ich warте auf den Bus.", prep: "auf" },
+    { verb: "wählen", rektion: "zu + D", bg: "избирам за", example: "Er wurde zum Chef gewählt.", prep: "zu" },
+    { verb: "weinen", rektion: "über + A", bg: "плача за", example: "Sie weint über den Film.", prep: "über" },
+    { verb: "wenden (sich)", rektion: "an + A", bg: "обръщам се към", example: "Wenden Sie sich an die Info.", prep: "an" },
+    { verb: "werben", rektion: "für + A", bg: "рекламирам нещо / агитирам за", example: "Die Firma wirbt für das Produkt.", prep: "für" },
+    { verb: "werden", rektion: "zu + D", bg: "превръщам се в / ставам на", example: "Das wird zum Problem.", prep: "zu" },
+    { verb: "wissen", rektion: "über + A / von + D", bg: "зная за / от", example: "Ich weiß nichts davon.", prep: "von" },
+    { verb: "wundern (sich)", rektion: "über + A", bg: "чудя се на", example: "Я съм се чудил über dich.", prep: "über" },
+    { verb: "zahlen", rektion: "für + A", bg: "плащам за", example: "Ich zahle für das Essen.", prep: "für" },
+    { verb: "zählen", rektion: "zu + D", bg: "числя се към", example: "Er zählt zu den Besten.", prep: "zu" },
+    { verb: "zeigen", rektion: "на + A", bg: "соча към", example: "Zeig auf das Bild.", prep: "auf" },
+    { verb: "zeugen", rektion: "von + D", bg: "свидетелствам за", example: "Das zeugt von Mut.", prep: "von" },
+    { verb: "zielen", rektion: "auf + A", bg: "целя се в", example: "Er zielt auf die Mitte.", prep: "на" },
+    { verb: "zittern", rektion: "vor + D", bg: "треперя от", example: "Sie zittert vor Angst.", prep: "vor" },
+    { verb: "zögern", rektion: "mit + D", bg: "колебая се с", example: "Zögern Sie nicht mit der Antwort.", prep: "mit" },
+    { verb: "zufrieden sein", rektion: "mit + D", bg: "доволен съм от", example: "Bist du mit dem Ergebnis zufrieden?", prep: "mit" },
+    { verb: "zugehen", rektion: "auf + A", bg: "приближавам се към", example: "Geh auf ihn zu.", prep: "на" },
+    { verb: "zuhören", rektion: "+ D", bg: "слушам някого", example: "Hör mir bitte zu!", prep: "D" },
+    { verb: "zukommen", rektion: "на + A", bg: "приближавам се към", example: "Lass es auf dich zukommen.", prep: "на" },
+    { verb: "zurechtkommen", rektion: "mit + D", bg: "справям се с", example: "Ich komme mit ihm gut zurecht.", prep: "mit" },
+    { verb: "zusammenstoßen", rektion: "mit + D", bg: "сблъсквам се с", example: "Zwei Autos stießen zusammen.", prep: "mit" },
+    { verb: "zusehen", rektion: "+ D + bei + D", bg: "гледам някого при", example: "Ich sah ihm beim Spielen zu.", prep: "bei" },
+    { verb: "zustimmen", rektion: "+ D", bg: "съгласявам се с", example: "Я съм съгласен с теб.", prep: "D" },
+    { verb: "zweifeln", rektion: "an + D", bg: "съмнявам се в", example: "Zweifle nicht an mir.", prep: "an" },
+    { verb: "zwingen", rektion: "+ A + zu + D", bg: "принуждавам някого към", example: "Man kann mich nicht zwingen.", prep: "zu" }
+];
+
+// --- APP STATE ---
+let data = [...rektionen].sort((a,b) => a.verb.localeCompare(b.verb));
+let index = 0;
+let errors = 0;
+let mode = 'fc'; // 'fc' (cards), 'qz' (standard quiz), 'rq' (rection quiz), 'wr' (write)
+let side = 'bgde'; // 'bgde' (BG -> DE), 'debg' (DE -> BG)
+let answered = false;
+
+// --- INITIALIZATION ---
+populateFilters();
+document.getElementById('stat-total').textContent = data.length;
+update();
+renderArchive();
+
+// --- FUNCTIONS ---
+
+function populateFilters() {
+    // Extract unique rections
+    const rections = new Set(rektionen.map(i => i.rektion));
+    const sorted = Array.from(rections).sort();
+
+    const select = document.getElementById('filter-rektion');
+    sorted.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.innerText = r;
+        select.appendChild(opt);
+    });
+}
+
+function startSession() {
+    const rVal = document.getElementById('filter-rektion').value;
+    const cVal = document.getElementById('filter-count').value;
+
+    // 1. Filter by Rection
+    let subset = rektionen.filter(i => rVal === 'all' || i.rektion === rVal);
+
+    if(subset.length === 0) {
+        alert("Няма думи с избраната рекция!");
+        return;
+    }
+
+    // 2. Shuffle
+    subset.sort(() => Math.random() - 0.5);
+
+    // 3. Slice by Count
+    if(cVal !== 'all') {
+        const count = parseInt(cVal);
+        if(subset.length > count) {
+            subset = subset.slice(0, count);
+        }
+    }
+
+    // 4. Update App State
+    data = subset;
+    index = 0;
+    errors = 0;
+
+    document.getElementById('stat-total').textContent = data.length;
+
+    // Reset Mode specific states
+    document.getElementById('feedback-panel').style.display = 'none';
+
+    // Animate button
+    const btn = document.querySelector('.btn-start');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = "✅ Готово";
+    setTimeout(() => btn.innerHTML = oldText, 1000);
+
+    update();
+}
+
+function setMode(m) {
+    mode = m;
+    ['m-fc','m-qz','m-rq','m-wr'].forEach(id => document.getElementById(id).classList.toggle('active', id === 'm-'+m));
+
+    document.getElementById('fc-container').style.display = m === 'fc' ? 'block' : 'none';
+    document.getElementById('main-area').style.display = m !== 'fc' ? 'flex' : 'none';
+
+    // Clear previous feedback when switching modes
+    document.getElementById('feedback-panel').style.display = 'none';
+
+    // Reset flashcard flip if switching modes
+    document.getElementById('fc-container').classList.remove('flipped');
+
+    update();
+}
+
+function setSide(s) {
+    side = s;
+    document.getElementById('s-bgde').classList.toggle('active', s === 'bgde');
+    document.getElementById('s-debg').classList.toggle('active', s === 'debg');
+    update();
+}
+
+function colorize(text) {
+    return text.replace(/\+ A/g, '<span class="txt-akk">+ A</span>').replace(/\+ D/g, '<span class="txt-dat">+ D</span>');
+}
+
+function update() {
+    if(!data[index]) index = 0;
+    const item = data[index];
+    answered = false; // Reset answered state for the new question
+
+    // Reset Feedback Panel
+    document.getElementById('feedback-panel').style.display = 'none';
+
+    // Reset Write Input
+    document.getElementById('wr-i').value = '';
+    document.getElementById('wr-check-btn').disabled = false;
+    document.getElementById('wr-i').disabled = false;
+
+    document.getElementById('stat-idx').innerText = index + 1;
+    document.getElementById('stat-err').innerText = errors;
+
+    // Prepare Question (Q) and Answer (A) based on side
+    let qStr, aMain;
+
+    if (side === 'bgde') {
+        qStr = item.bg;
+        aMain = `${item.verb} ${item.rektion}`;
+    } else {
+        // DE -> BG
+        qStr = `${item.verb} ${item.rektion}`;
+        aMain = item.bg;
+    }
+
+    if(mode === 'fc') {
+        document.getElementById('fc-container').classList.remove('flipped');
+        document.getElementById('fc-front').innerHTML = side === 'debg' ? colorize(qStr) : qStr;
+        document.getElementById('fc-hint-front').innerText = side === 'bgde' ? "Български" : "Deutsch";
+        document.getElementById('fc-back-main').innerHTML = side === 'bgde' ? colorize(aMain) : aMain;
+        document.getElementById('fc-example').innerText = "📝 " + item.example;
+
+    } else if(mode === 'qz') {
+        loadQuiz(item, qStr, aMain);
+    } else if(mode === 'rq') {
+        loadRectionQuiz(item);
+    } else if(mode === 'wr') {
+        loadWrite(item, qStr);
+    }
+}
+
+function flipCard() {
+    document.getElementById('fc-container').classList.toggle('flipped');
+}
+
+// --- STANDARD QUIZ MODE ---
+function loadQuiz(item, questionText, answerText) {
+    document.getElementById('qz-area').style.display = 'block';
+    document.getElementById('wr-area').style.display = 'none';
+    document.getElementById('qz-hint').innerText = "Изберете правилния отговор";
+
+    document.getElementById('qz-q').innerHTML = side === 'debg' ? colorize(questionText) : questionText;
+
+    let correct = answerText;
+    let options = [correct];
+
+    // Safety check for not enough options in filtered subset
+    const sourcePool = data.length >= 4 ? data : rektionen;
+
+    while(options.length < 4) {
+        let randomItem = sourcePool[Math.floor(Math.random() * sourcePool.length)];
+        let randomOption;
+        if (side === 'bgde') {
+            randomOption = `${randomItem.verb} ${randomItem.rektion}`;
+        } else {
+            randomOption = randomItem.bg;
+        }
+        if(!options.includes(randomOption)) options.push(randomOption);
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    renderOptions(options, correct, item);
+}
+
+// --- RECTION QUIZ MODE ---
+function loadRectionQuiz(item) {
+    document.getElementById('qz-area').style.display = 'block';
+    document.getElementById('wr-area').style.display = 'none';
+    document.getElementById('qz-hint').innerText = "Изберете правилната рекция";
+
+    let displayQ = "";
+    if(side === 'bgde') {
+        displayQ = `${item.bg} (${item.verb})`;
+    } else {
+        displayQ = item.verb;
+    }
+
+    document.getElementById('qz-q').innerText = displayQ;
+
+    let correct = item.rektion;
+    let options = [correct];
+
+    while(options.length < 4) {
+        let randomItem = rektionen[Math.floor(Math.random() * rektionen.length)];
+        let randomOption = randomItem.rektion;
+        if(!options.includes(randomOption)) options.push(randomOption);
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    renderOptions(options, correct, item, true);
+}
+
+function renderOptions(options, correct, item, isRectionMode = false) {
+    const container = document.getElementById('qz-opts');
+    container.innerHTML = '';
+
+    options.forEach(opt => {
+        const btn = document.createElement('div');
+        btn.className = 'opt';
+        btn.innerHTML = (side === 'bgde' || isRectionMode) ? colorize(opt) : opt;
+
+        btn.onclick = () => {
+            if(answered) return;
+            answered = true;
+
+            if(opt === correct) {
+                btn.classList.add('correct');
+                showFeedback(true, item);
+            } else {
+                btn.classList.add('wrong');
+                errors++;
+                document.getElementById('stat-err').innerText = errors;
+                showFeedback(false, item, correct);
+
+                Array.from(container.children).forEach(c => {
+                    if(c.textContent.includes(correct.replace(/<[^>]*>/g, '')) || c.innerHTML === colorize(correct)) {
+                        c.classList.add('correct');
+                    }
+                });
+            }
+            Array.from(container.children).forEach(c => c.classList.add('disabled'));
+        };
+        container.appendChild(btn);
+    });
+}
+
+// --- WRITE MODE ---
+function loadWrite(item, questionText) {
+    document.getElementById('qz-area').style.display = 'none';
+    document.getElementById('wr-area').style.display = 'block';
+
+    document.getElementById('wr-q').innerHTML = side === 'debg' ? colorize(questionText) : questionText;
+    document.getElementById('wr-i').focus();
+}
+
+function checkWrite() {
+    if(answered) return;
+
+    const item = data[index];
+    const input = document.getElementById('wr-i').value.trim().toLowerCase();
+
+    if(!input) return;
+
+    let expected = "";
+    if (side === 'bgde') {
+        expected = `${item.verb} ${item.rektion}`;
+    } else {
+        expected = item.bg;
+    }
+
+    const normInput = input.replace(/\s+/g, ' ').replace(/\s?\+\s?/g, '+');
+    const normExpected = expected.toLowerCase().replace(/\s+/g, ' ').replace(/\s?\+\s?/g, '+');
+
+    answered = true;
+    document.getElementById('wr-check-btn').disabled = true;
+    document.getElementById('wr-i').disabled = true;
+
+    let isCorrect = (normInput === normExpected);
+    if(side === 'bgde' && !isCorrect) {
+         if(normInput === item.verb.toLowerCase()) isCorrect = true;
+    }
+
+    if (isCorrect) {
+        showFeedback(true, item);
+    } else {
+        errors++;
+        document.getElementById('stat-err').innerText = errors;
+        showFeedback(false, item, expected);
+    }
+}
+
+// --- FEEDBACK SYSTEM ---
+function showFeedback(isCorrect, item, correctAnswerText = null) {
+    const panel = document.getElementById('feedback-panel');
+    const status = document.getElementById('fb-status');
+    const meaning = document.getElementById('fb-meaning');
+    const example = document.getElementById('fb-example');
+
+    panel.style.display = 'block';
+
+    if(isCorrect) {
+        status.innerHTML = `<span style="color:var(--success)">✅ Вярно!</span>`;
+        panel.style.borderLeftColor = "var(--success)";
+    } else {
+        let corrTxt = correctAnswerText ? correctAnswerText : `${item.verb} ${item.rektion}`;
+        status.innerHTML = `<span style="color:var(--error)">❌ Грешка!</span> <br> Правилно: <strong>${colorize(corrTxt)}</strong>`;
+        panel.style.borderLeftColor = "var(--error)";
+    }
+
+    meaning.innerText = item.bg;
+    example.innerHTML = `<em>${item.verb} ${colorize(item.rektion)}</em><br>${item.example}`;
+}
+
+// --- NAVIGATION ---
+function move(step) {
+    index = (index + step + data.length) % data.length;
+    update();
+}
+
+// --- ARCHIVE LOGIC ---
+function renderArchive(filteredList = null) {
+    const listContainer = document.getElementById('archive-list');
+    listContainer.innerHTML = '';
+
+    const source = filteredList || rektionen;
+    document.getElementById('archive-count').innerText = `${source.length} думи`;
+
+    source.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'archive-item';
+        div.innerHTML = `
+            <div><strong>${item.verb} ${colorize(item.rektion)}</strong></div>
+            <div>${item.bg}</div>
+            <small>${item.example}</small>
+        `;
+        listContainer.appendChild(div);
+    });
+}
+
+function filterArchive() {
+    const term = document.getElementById('search-input').value.toLowerCase();
+
+    if (term.length < 1) {
+        renderArchive(rektionen);
+        return;
+    }
+
+    const filtered = rektionen.filter(item => {
+        return item.verb.toLowerCase().includes(term) ||
+               item.rektion.toLowerCase().includes(term) ||
+               item.bg.toLowerCase().includes(term);
+    });
+
+    renderArchive(filtered);
+}
+</script>
+</body>
+</html>
