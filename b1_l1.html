@@ -25,6 +25,9 @@
         .stats-bar { display: flex; justify-content: space-between; background: #333; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .panel { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         
+        /* Филтър за брой думи */
+        .filter-select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; background: white; font-size: 0.9em; outline: none; margin-bottom: 10px; }
+
         /* Коригирана група бутони */
         .btn-group { display: flex; gap: 5px; flex-wrap: nowrap; margin-top: 10px; width: 100%; }
         .tgl { 
@@ -85,6 +88,13 @@
     </div>
 
     <div class="panel">
+        <select id="filter-count" class="filter-select">
+            <option value="all">Всички налични думи</option>
+            <option value="10">Тренирай 10 думи</option>
+            <option value="20">Тренирай 20 думи</option>
+            <option value="50">Тренирай 50 думи</option>
+        </select>
+
         <div class="btn-group">
             <button class="tgl active" id="m-fc" onclick="setMode('fc')">📚 Карти</button>
             <button class="tgl" id="m-qz" onclick="setMode('qz')">🎮 Тест</button>
@@ -95,7 +105,7 @@
             <button class="tgl active" id="s-bgde" onclick="setSide('bgde')">BG ➔ DE</button>
             <button class="tgl" id="s-debg" onclick="setSide('debg')">DE ➔ BG</button>
         </div>
-        <button class="btn-next" style="width:100%; margin-top:10px; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold;" onclick="startSession()">🔄 Разбъркай и започни</button>
+        <button class="btn-next" style="width:100%; margin-top:10px; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:bold;" onclick="startSession()">🚀 Започни сесия</button>
     </div>
 
     <div id="fc-container" class="flip-container" onclick="flipCard()">
@@ -143,7 +153,6 @@
 </div>
 
 <script>
-// Твоят Google Sheets линк остава същият
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSzhZzf6W92kncaxEk6qsOYdRliJUzM_EM1ij73kiN9RvRqs1VDGH4J7N2TYPa6AYl45CFmu-j_H0bq/pub?output=tsv";
 
 let rektionen = [];
@@ -171,8 +180,16 @@ async function initializeApp() {
 }
 
 function startSession() {
-    data = [...rektionen].sort(() => Math.random() - 0.5);
+    const countVal = document.getElementById('filter-count').value;
+    let shuffled = [...rektionen].sort(() => Math.random() - 0.5);
+    
+    if(countVal !== 'all') {
+        shuffled = shuffled.slice(0, parseInt(countVal));
+    }
+    
+    data = shuffled;
     index = 0;
+    errors = 0; // Нулиране на грешките при нов старт
     update();
 }
 
