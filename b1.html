@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Медицински Немски - Master Trainer Pro</title>
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --secondary: #b21f1f;
+            --success: #28a745;
+            --error: #dc3545;
+            --akk: #007bff;
+            --dat: #d63384;
+            --bg-color: #f0f2f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); min-height: 100vh; padding: 10px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        .stats-bar { display: flex; justify-content: space-between; background: #333; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .panel { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .filter-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .filter-select { flex: 1; min-width: 120px; padding: 10px; border: 2px solid #eee; border-radius: 8px; background: white; font-size: 0.9em; outline: none; }
+        .btn-start { flex: 1; min-width: 120px; background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tgl { flex: 1; min-width: 80px; padding: 10px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: all 0.2s; }
+        .tgl.active { background: var(--primary); color: white; }
+        .flip-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
+        .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        .flip-container.flipped .flip-inner { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); }
+        .card-back { transform: rotateY(180deg); border-top: 5px solid var(--primary); }
+        .card-main-text { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
+        .card-example { margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95em; color: #555; width: 90%; }
+        .main-card { background: white; border-radius: 20px; padding: 25px; min-height: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .opt-grid { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; margin-top: 10px; }
+        .opt { padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; font-weight: 600; text-align: center; font-size: 1.1em; color: #444; }
+        .opt.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .opt.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.2em; text-align: center; margin-top: 20px; outline: none; }
+        .feedback-panel { margin-top: 20px; width: 100%; padding: 15px; background: #f1f8ff; border-left: 5px solid var(--primary); border-radius: 8px; display: none; text-align: left; }
+        .controls { display: flex; gap: 15px; width: 100%; }
+        .btn { flex: 1; padding: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #dfe4ea; font-size: 1.1em; }
+        .btn-next { background: var(--primary); color: white; }
+        .archive-section { margin-top: 40px; background: white; border-radius: 15px; padding: 20px; }
+        .archive-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .archive-item { padding: 10px; background: #f9f9f9; border-left: 4px solid var(--primary); border-radius: 4px; }
+        .txt-akk { color: var(--akk); font-weight: bold; }
+        .txt-dat { color: var(--dat); font-weight: bold; }
+        .text-hint { font-size: 0.9em; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="stats-bar">
+        <span>Дума: <span id="stat-idx">0</span> / <span id="stat-total">0</span></span>
+        <span>Грешки: <span id="stat-err" style="color:#ff8a8a">0</span></span>
+    </div>
+
+    <div class="panel">
+        <div class="filter-row">
+            <select id="filter-rektion" class="filter-select"><option value="all">Всички категории</option></select>
+            <select id="filter-count" class="filter-select">
+                <option value="all">Всички думи</option>
+                <option value="10">10 думи</option>
+                <option value="20">20 думи</option>
+            </select>
+            <button class="btn-start" onclick="startSession()">🚀 Старт</button>
+        </div>
+
+        <div class="btn-group">
+            <button class="tgl active" id="m-fc" onclick="setMode('fc')">📚 Карти</button>
+            <button class="tgl" id="m-qz" onclick="setMode('qz')">🎮 Тест</button>
+            <button class="tgl" id="m-rq" onclick="setMode('rq')">🧩 Рекции/Оконч.</button>
+            <button class="tgl" id="m-wr" onclick="setMode('wr')">✍️ Писане</button>
+        </div>
+        <div class="btn-group">
+            <button class="tgl active" id="s-bgde" onclick="setSide('bgde')">BG ➔ DE</button>
+            <button class="tgl" id="s-debg" onclick="setSide('debg')">DE ➔ BG</button>
+        </div>
+    </div>
+
+    <div id="fc-container" class="flip-container" onclick="flipCard()">
+        <div class="flip-inner">
+            <div class="card-face card-front">
+                <div class="text-hint" id="fc-hint-front">Въпрос</div>
+                <div class="card-main-text" id="fc-front"></div>
+            </div>
+            <div class="card-face card-back">
+                <div class="text-hint">Отговор</div>
+                <div class="card-main-text" id="fc-back-main"></div>
+                <div class="card-example" id="fc-example"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-area" class="main-card" style="display:none">
+        <div id="qz-area" style="width:100%">
+            <div id="qz-q" style="font-weight:bold; text-align:center; font-size:1.6em; margin-bottom: 20px; color: var(--primary);"></div>
+            <div id="qz-opts" class="opt-grid"></div>
+        </div>
+
+        <div id="wr-area" style="width:100%; display:none;">
+            <div id="wr-q" style="font-weight:bold; text-align:center; font-size:1.6em; color: var(--primary);"></div>
+            <input type="text" id="wr-i" placeholder="Напиши отговора..." onkeypress="if(event.key==='Enter') checkWrite()">
+            <button class="btn" style="width:100%; margin-top:15px;" onclick="checkWrite()">Провери</button>
+        </div>
+
+        <div id="feedback-panel" class="feedback-panel">
+            <div id="fb-status" style="font-weight:bold; font-size:1.1em; margin-bottom:5px;"></div>
+            <div id="fb-meaning" style="font-style:italic; color:#666; margin-bottom:8px;"></div>
+            <div id="fb-example" style="background:rgba(255,255,255,0.6); padding:8px; border-radius:5px; font-size:0.95em;"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="move(-1)">⬅️ Предишна</button>
+        <button class="btn btn-next" onclick="move(1)">Следваща ➡️</button>
+    </div>
+
+    <div class="archive-section">
+        <input type="text" class="filter-select" id="search-input" placeholder="🔍 Търси дума..." onkeyup="filterArchive()" style="width:100%; margin-bottom:15px;">
+        <div class="archive-list" id="archive-list"></div>
+    </div>
+</div>
+
+<script>
+// ТУК ЗАМЕНЕТЕ С ВАШИЯ НОВ URL ОТ GOOGLE SHEETS
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSzhZzf6W92kncaxEk6qsOYdRliJUzM_EM1ij73kiN9RvRqs1VDGH4J7N2TYPa6AYl45CFmu-j_H0bq/pub?output=tsv";
+
+let rektionen = [];
+let data = [];
+let index = 0;
+let errors = 0;
+let mode = 'fc';
+let side = 'bgde';
+let answered = false;
+
+async function initializeApp() {
+    try {
+        const response = await fetch(SHEET_URL);
+        if (!response.ok) throw new Error("Проблем с мрежата");
+        const tsv = await response.text();
+        const rows = tsv.split('\n').map(r => r.split('\t'));
+
+        rektionen = rows.slice(1)
+            .filter(r => r[0] && r[0].trim() !== "")
+            .map(r => ({
+                verb: r[0].trim(),
+                rektion: r[1] ? r[1].trim() : "",
+                bg: r[2] ? r[2].trim() : "",
+                example: r[3] ? r[3].trim() : ""
+            }));
+
+        data = [...rektionen].sort((a,b) => a.verb.localeCompare(b.verb));
+        populateFilters();
+        renderArchive();
+        update();
+    } catch (e) {
+        alert("Грешка при зареждане!");
+        console.error(e);
+    }
+}
+
+function populateFilters() {
+    const unique = [...new Set(rektionen.map(i => i.rektion))].sort();
+    const select = document.getElementById('filter-rektion');
+    unique.forEach(r => {
+        if(r) {
+            const opt = document.createElement('option');
+            opt.value = r; opt.innerText = r;
+            select.appendChild(opt);
+        }
+    });
+}
+
+// Помощна функция за правилно слепване на дума + рекция
+function formatDE(verb, rek) {
+    if (!rek || rek === "-") return verb;
+    // Ако рекцията започва с тире (напр. -en), не добавяме интервал
+    if (rek.startsWith("-")) return verb + rek;
+    return verb + " " + rek;
+}
+
+function colorize(text) {
+    if (!text) return "";
+    return text.replace(/\+ A/g, '<span class="txt-akk">+ A</span>')
+               .replace(/\+ D/g, '<span class="txt-dat">+ D</span>');
+}
+
+function update() {
+    if (data.length === 0) return;
+    const item = data[index];
+    answered = false;
+    document.getElementById('stat-idx').innerText = index + 1;
+    document.getElementById('stat-total').innerText = data.length;
+    document.getElementById('stat-err').innerText = errors;
+    document.getElementById('feedback-panel').style.display = 'none';
+    document.getElementById('wr-i').value = '';
+
+    const deFull = formatDE(item.verb, item.rektion);
+
+    if (mode === 'fc') {
+        document.getElementById('fc-container').classList.remove('flipped');
+        document.getElementById('fc-front').innerHTML = side === 'bgde' ? item.bg : colorize(deFull);
+        document.getElementById('fc-back-main').innerHTML = side === 'bgde' ? colorize(deFull) : item.bg;
+        document.getElementById('fc-example').innerText = item.example ? "📝 " + item.example : "";
+    } else if (mode === 'qz') {
+        loadQuiz(item, side === 'bgde' ? item.bg : deFull, side === 'bgde' ? deFull : item.bg);
+    } else if (mode === 'rq') {
+        loadRectionQuiz(item);
+    } else if (mode === 'wr') {
+        document.getElementById('wr-q').innerHTML = side === 'bgde' ? item.bg : colorize(deFull);
+    }
+}
+
+function loadQuiz(item, qText, aText) {
+    document.getElementById('qz-q').innerHTML = colorize(qText);
+    let opts = [aText];
+    while(opts.length < 4 && opts.length < rektionen.length) {
+        let r = rektionen[Math.floor(Math.random()*rektionen.length)];
+        let val = side === 'bgde' ? formatDE(r.verb, r.rektion) : r.bg;
+        if(!opts.includes(val)) opts.push(val);
+    }
+    renderOptions(opts.sort(() => Math.random() - 0.5), aText);
+}
+
+function loadRectionQuiz(item) {
+    document.getElementById('qz-q').innerText = item.verb + " (" + item.bg + ")";
+    let correct = item.rektion || "-";
+    let opts = [correct];
+    while(opts.length < 4) {
+        let r = rektionen[Math.floor(Math.random()*rektionen.length)].rektion || "-";
+        if(!opts.includes(r)) opts.push(r);
+    }
+    renderOptions(opts.sort(() => Math.random() - 0.5), correct);
+}
+
+function renderOptions(opts, correct) {
+    const container = document.getElementById('qz-opts');
+    container.innerHTML = '';
+    opts.forEach(o => {
+        const div = document.createElement('div');
+        div.className = 'opt';
+        div.innerHTML = colorize(o);
+        div.onclick = () => {
+            if(answered) return;
+            answered = true;
+            if(o === correct) div.classList.add('correct');
+            else { div.classList.add('wrong'); errors++; }
+            showFeedback(o === correct, correct);
+        };
+        container.appendChild(div);
+    });
+}
+
+function checkWrite() {
+    const item = data[index];
+    const val = document.getElementById('wr-i').value.trim().toLowerCase();
+    const correctFull = formatDE(item.verb, item.rektion).toLowerCase();
+    const correctVerbOnly = item.verb.toLowerCase();
+    
+    const isCorrect = (side === 'bgde') 
+        ? (val === correctFull || val === correctVerbOnly)
+        : (val === item.bg.toLowerCase());
+
+    if(isCorrect) showFeedback(true);
+    else { 
+        errors++; 
+        showFeedback(false, side === 'bgde' ? formatDE(item.verb, item.rektion) : item.bg); 
+    }
+    answered = true;
+}
+
+function showFeedback(isCorrect, correctText) {
+    const p = document.getElementById('feedback-panel');
+    p.style.display = 'block';
+    document.getElementById('fb-status').innerHTML = isCorrect ? '<span style="color:var(--success)">✅ Вярно!</span>' : `<span style="color:var(--error)">❌ Грешка!</span><br>Правилно: ${colorize(correctText)}`;
+    document.getElementById('fb-meaning').innerText = data[index].bg;
+    document.getElementById('fb-example').innerText = data[index].example;
+}
+
+function setMode(m) { 
+    mode = m; 
+    document.querySelectorAll('.tgl').forEach(b => b.id.startsWith('m-') && b.classList.remove('active')); 
+    document.getElementById('m-'+m).classList.add('active'); 
+    document.getElementById('fc-container').style.display = m==='fc'?'block':'none'; 
+    document.getElementById('main-area').style.display = m==='fc'?'none':'flex'; 
+    document.getElementById('wr-area').style.display = m==='wr'?'block':'none'; 
+    document.getElementById('qz-area').style.display = (m==='qz'||m==='rq')?'block':'none'; 
+    update(); 
+}
+
+function setSide(s) { side = s; document.getElementById('s-bgde').classList.toggle('active', s==='bgde'); document.getElementById('s-debg').classList.toggle('active', s==='debg'); update(); }
+function move(s) { index = (index + s + data.length) % data.length; update(); }
+function flipCard() { if(mode === 'fc') document.getElementById('fc-container').classList.toggle('flipped'); }
+
+function startSession() {
+    const r = document.getElementById('filter-rektion').value;
+    const c = document.getElementById('filter-count').value;
+    let sub = rektionen.filter(i => r === 'all' || i.rektion === r);
+    sub.sort(() => Math.random() - 0.5);
+    if(c !== 'all') sub = sub.slice(0, parseInt(c));
+    data = sub; index = 0; update();
+}
+
+function renderArchive(l) {
+    const c = document.getElementById('archive-list'); c.innerHTML = '';
+    (l || rektionen).forEach(i => {
+        const d = document.createElement('div'); d.className = 'archive-item';
+        d.innerHTML = `<strong>${formatDE(i.verb, i.rektion)}</strong><br>${i.bg}`;
+        c.appendChild(d);
+    });
+}
+
+function filterArchive() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    renderArchive(rektionen.filter(i => i.verb.toLowerCase().includes(q) || i.bg.toLowerCase().includes(q)));
+}
+
+window.onload = initializeApp;
+</script>
+</body>
+</html>
