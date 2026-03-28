@@ -37,13 +37,18 @@
         .opt { padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-weight: 600; text-align: center; }
         .opt.correct { background: var(--success) !important; color: white; }
         .opt.wrong { background: var(--error) !important; color: white; }
-        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.1em; outline: none; }
+        input[type="text"], .search-box { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.1em; outline: none; }
         .feedback-panel { margin-top: 20px; width: 100%; padding: 15px; background: #f1f8ff; border-left: 5px solid var(--primary); border-radius: 8px; display: none; }
         .controls { display: flex; gap: 15px; margin-bottom: 30px; }
         .btn { flex: 1; padding: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #dfe4ea; }
         .btn-next { background: var(--primary); color: white; }
         .txt-akk { color: var(--akk); font-weight: bold; }
         .txt-dat { color: var(--dat); font-weight: bold; }
+
+        /* Архив Стилове */
+        .archive-section { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-top: 20px; }
+        .archive-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .archive-item { padding: 12px; background: #f9f9f9; border-left: 5px solid var(--primary); border-radius: 6px; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -105,6 +110,12 @@
         <button class="btn" onclick="move(-1)">⬅️</button>
         <button class="btn btn-next" onclick="move(1)">Следваща ➡️</button>
     </div>
+
+    <div class="archive-section">
+        <h3 style="margin-bottom:15px; color: var(--primary);">📂 Архив на думите</h3>
+        <input type="text" class="search-box" id="search-input" placeholder="🔍 Търси дума..." onkeyup="filterArchive()">
+        <div class="archive-list" id="archive-list"></div>
+    </div>
 </div>
 
 <script>
@@ -129,6 +140,7 @@ async function initializeApp() {
             bg: r[2] ? r[2].trim() : "",
             example: r[3] ? r[3].trim() : ""
         }));
+        renderArchive();
         startSession();
     } catch (e) { alert("Грешка при зареждане!"); }
 }
@@ -151,16 +163,10 @@ function colorize(text) {
 function getCorrectFormat(item) {
     const isNoun = ["der", "die", "das"].includes(item.verb.split(' ')[0].toLowerCase());
     if (isNoun) {
-        // Проверка: дали в rektion имаме цяла дума (започваща с der/die/das)
-        const isFullWord = /^(der|die|das)/i.test(item.rektion);
-        if (isFullWord) {
-            return `${item.verb}, ${item.rektion}`; // "der Arzt, die Ärzte"
-        } else {
-            return `${item.verb}, ${item.rektion}`; // "das Quartal, -e"
-        }
+        return `${item.verb}, ${item.rektion}`;
     } else {
         const rek = item.rektion === "-" ? "" : ` ${item.rektion}`;
-        return `${item.verb}${rek}`; // "schaden + D"
+        return `${item.verb}${rek}`;
     }
 }
 
@@ -265,6 +271,28 @@ function showFeedback(isCorrect, correctText) {
     p.style.display = 'block';
     document.getElementById('fb-status').innerHTML = isCorrect ? '<span style="color:var(--success)">✅ Вярно!</span>' : `<span style="color:var(--error)">❌ Грешка!</span><br>Правилно: ${colorize(correctText)}`;
     document.getElementById('fb-meaning').innerHTML = `<strong>${data[index].bg}</strong><br><small>${data[index].example}</small>`;
+}
+
+function renderArchive(list) {
+    const container = document.getElementById('archive-list');
+    container.innerHTML = '';
+    const itemsToShow = list || rektionen;
+    itemsToShow.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'archive-item';
+        div.innerHTML = `<strong>${colorize(getCorrectFormat(item))}</strong><br><span style="color:#666">${item.bg}</span>`;
+        container.appendChild(div);
+    });
+}
+
+function filterArchive() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const filtered = rektionen.filter(i => 
+        i.verb.toLowerCase().includes(query) || 
+        i.bg.toLowerCase().includes(query) || 
+        i.rektion.toLowerCase().includes(query)
+    );
+    renderArchive(filtered);
 }
 
 function setMode(m) { mode = m; update(); document.querySelectorAll('.tgl').forEach(b => b.id.startsWith('m-') && b.classList.remove('active')); document.getElementById('m-'+m).classList.add('active'); document.getElementById('fc-container').style.display = m==='fc'?'block':'none'; document.getElementById('main-area').style.display = m==='fc'?'none':'flex'; document.getElementById('wr-area').style.display = m==='wr'?'block':'none'; document.getElementById('qz-area').style.display = (m==='qz'||m==='rq')?'block':'none'; }
