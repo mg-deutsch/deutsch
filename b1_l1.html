@@ -151,9 +151,20 @@ async function initializeApp() {
 
 function startSession() {
     const countVal = document.getElementById('filter-count').value;
-    let shuffled = [...rektionen].sort(() => Math.random() - 0.5);
-    if(countVal !== 'all') shuffled = shuffled.slice(0, parseInt(countVal));
-    data = shuffled;
+    
+    // Fisher-Yates Shuffle за истинска случайност
+    let shuffled = [...rektionen];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    if(countVal !== 'all') {
+        data = shuffled.slice(0, parseInt(countVal));
+    } else {
+        data = shuffled;
+    }
+    
     index = 0;
     errors = 0;
     update();
