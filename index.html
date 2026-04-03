@@ -67,6 +67,23 @@
         .icon {
             font-size: 1.6em;
         }
+        .github-footer {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.github-icon {
+    width: 24px; /* Малък размер */
+    height: 24px;
+    opacity: 0.6; /* Леко прозрачно, за да не се набива на очи */
+    transition: opacity 0.3s ease;
+}
+
+.github-icon:hover {
+    opacity: 1; /* Светва при посочване */
+}
     </style>
 </head>
 <body>
@@ -88,7 +105,13 @@
     </div>
 
     <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-        <p style="color: #999; font-size: 0.85em;">✣ 2026 Deutschmeister</p>
+        <p style="color: #999; font-size: 0.85em; margin-bottom: 10px;">✣ 2026 Deutschmeister</p>
+        
+        <div class="github-footer">
+            <a href="https://github.com/mg-deutsch/deutsch" target="_blank" title="GitHub Repository">
+                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" class="github-icon">
+            </a>
+        </div>
     </div>
 </div>
 
