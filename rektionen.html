@@ -17,11 +17,10 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); min-height: 100vh; padding: 10px; color: #333; }
         
-        /* Бутон назад */
         .nav-back { padding: 5px; max-width: 600px; margin: 0 auto 10px auto; }
         .nav-back a { text-decoration: none; color: var(--primary); font-weight: bold; font-size: 0.9em; }
 
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 50px; display: flex; flex-direction: column; }
         .stats-bar { display: flex; justify-content: space-between; background: #333; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .panel { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .filter-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
@@ -30,11 +29,20 @@
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .tgl { flex: 1; min-width: 80px; padding: 10px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: all 0.2s; }
         .tgl.active { background: var(--primary); color: white; }
+        
         .flip-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
         .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        
+        /* КЛАС ЗА ИЗКЛЮЧЕНА АНИМАЦИЯ */
+        .no-transition { transition: none !important; }
+
         .flip-container.flipped .flip-inner { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); }
         .card-back { transform: rotateY(180deg); border-top: 5px solid var(--primary); }
+        
+        /* ШРИФТ ЗА ОТГОВОРА НА КАРТИТЕ */
+        .card-back .card-main-text { font-family: 'Courier New', Courier, monospace; }
+
         .card-main-text { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
         .card-sub-text { font-size: 1.1em; color: #666; margin-top: 15px; font-style: italic; }
         .card-example { margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95em; color: #555; width: 90%; }
@@ -48,12 +56,15 @@
         .controls { display: flex; gap: 15px; width: 100%; }
         .btn { flex: 1; padding: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #dfe4ea; font-size: 1.1em; }
         .btn-next { background: var(--primary); color: white; }
-        .archive-section { margin-top: 40px; background: white; border-radius: 15px; padding: 20px; }
+        
+        .archive-section { margin-top: 40px; background: white; border-radius: 15px; padding: 20px; order: 1; }
         .archive-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .archive-item { padding: 10px; background: #f9f9f9; border-left: 4px solid var(--primary); border-radius: 4px; }
         .txt-akk { color: var(--akk); font-weight: bold; }
         .txt-dat { color: var(--dat); font-weight: bold; }
         .text-hint { font-size: 0.9em; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+
+        .anim-control { background: none; border: none; color: #999; font-size: 0.75em; cursor: pointer; margin-top: 15px; text-decoration: underline; order: 2; align-self: center; }
     </style>
 </head>
 <body>
@@ -93,7 +104,7 @@
     </div>
 
     <div id="fc-container" class="flip-container" onclick="flipCard()">
-        <div class="flip-inner">
+        <div id="flip-inner" class="flip-inner no-transition">
             <div class="card-face card-front">
                 <div class="text-hint" id="fc-hint-front">Въпрос</div>
                 <div class="card-main-text" id="fc-front"></div>
@@ -134,6 +145,8 @@
         <input type="text" class="filter-select" id="search-input" placeholder="🔍 Търси дума..." onkeyup="filterArchive()" style="width:100%; margin-bottom:15px;">
         <div class="archive-list" id="archive-list"></div>
     </div>
+
+    <button class="anim-control" onclick="toggleAnimation()" id="anim-text">Анимация: ИЗКЛ</button>
 </div>
 
 <script>
@@ -146,6 +159,7 @@ let errors = 0;
 let mode = 'fc';
 let side = 'bgde';
 let answered = false;
+let animationsOn = false;
 
 async function initializeApp() {
     try {
@@ -168,7 +182,7 @@ async function initializeApp() {
         renderArchive();
         update();
     } catch (e) {
-        alert("Грешка при зареждане! Ако си във Firefox, направи настройката в about:config.");
+        alert("Грешка при зареждане!");
         console.error(e);
     }
 }
@@ -275,6 +289,20 @@ function setMode(m) { mode = m; document.querySelectorAll('.tgl').forEach(b => b
 function setSide(s) { side = s; document.getElementById('s-bgde').classList.toggle('active', s==='bgde'); document.getElementById('s-debg').classList.toggle('active', s==='debg'); update(); }
 function move(s) { index = (index + s + data.length) % data.length; update(); }
 function flipCard() { document.getElementById('fc-container').classList.toggle('flipped'); }
+
+function toggleAnimation() {
+    animationsOn = !animationsOn;
+    const inner = document.getElementById('flip-inner');
+    const text = document.getElementById('anim-text');
+    if (animationsOn) {
+        inner.classList.remove('no-transition');
+        text.innerText = "Анимация: ВКЛ";
+    } else {
+        inner.classList.add('no-transition');
+        text.innerText = "Анимация: ИЗКЛ";
+    }
+}
+
 function startSession() {
     const r = document.getElementById('filter-rektion').value;
     const c = document.getElementById('filter-count').value;
