@@ -60,6 +60,11 @@
         
         .card-back { transform: rotateY(180deg); border-top: 5px solid var(--primary); }
         
+        /* ПРОМЯНА САМО НА ШРИФТА НА ОТГОВОРА (ГЪРБА НА КАРТАТА) */
+        .card-back .card-main-text { 
+            font-family: 'Estrangelo Tur Abdin', Courier, monospace; /* Можете да смените с 'Georgia', 'Times New Roman' или друг */
+            letter-spacing: -1px;
+        }
         .card-main-text { font-size: 1.8em; font-weight: 700; color: #2c3e50; }
         .card-example { margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.9em; color: #555; }
         .main-card { background: white; border-radius: 20px; padding: 25px; min-height: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
@@ -173,7 +178,6 @@ let errors = 0;
 let mode = 'fc';
 let side = 'bgde';
 let answered = false;
-// ПРОМЕНЕНО НА false ПО ДЕФОЛТ
 let animationsOn = false;
 
 async function initializeApp() {
