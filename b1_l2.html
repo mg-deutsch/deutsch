@@ -54,6 +54,10 @@
         .tgl.active { background: var(--primary); color: white; }
         .flip-container { perspective: 1000px; width: 100%; height: 300px; margin-bottom: 20px; cursor: pointer; }
         .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        
+        /* Клас за спиране на анимацията */
+        .no-transition { transition: none !important; }
+
         .flip-container.flipped .flip-inner { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .card-back { transform: rotateY(180deg); border-top: 5px solid var(--primary); }
@@ -76,6 +80,9 @@
         .archive-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .archive-item { padding: 12px; background: #f9f9f9; border-left: 5px solid var(--primary); border-radius: 6px; font-size: 0.9em; }
         .badge { display: inline-block; padding: 2px 6px; background: #eee; border-radius: 4px; font-size: 0.75em; color: #777; margin-top: 5px; }
+        
+        /* Стил за новия бутон */
+        .anim-control { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -119,7 +126,7 @@
     </div>
 
     <div id="fc-container" class="flip-container" onclick="flipCard()">
-        <div class="flip-inner">
+        <div id="flip-inner" class="flip-inner">
             <div class="card-face"><div class="card-main-text" id="fc-front"></div></div>
             <div class="card-face card-back">
                 <div class="card-main-text" id="fc-back-main"></div>
@@ -149,6 +156,10 @@
         <button class="btn btn-next" onclick="move(1)">Следваща ➡️</button>
     </div>
 
+    <button class="anim-control" onclick="toggleAnimation()">
+        <span id="anim-icon">🎬</span> <span id="anim-text">Анимация: ВКЛ</span>
+    </button>
+
     <div class="archive-section">
         <h3 style="margin-bottom:15px; color: var(--primary);">📂 Архив на думите</h3>
         <input type="text" class="search-box" id="search-input" placeholder="🔍 Търси дума..." onkeyup="filterArchive()">
@@ -166,6 +177,7 @@ let errors = 0;
 let mode = 'fc';
 let side = 'bgde';
 let answered = false;
+let animationsOn = true;
 
 async function initializeApp() {
     try {
@@ -366,6 +378,25 @@ function setMode(m) { mode = m; update(); document.querySelectorAll('.tgl').forE
 function setSide(s) { side = s; update(); document.getElementById('s-bgde').classList.toggle('active', s==='bgde'); document.getElementById('s-debg').classList.toggle('active', s==='debg'); }
 function move(s) { index = (index + s + data.length) % data.length; update(); }
 function flipCard() { if(mode==='fc') document.getElementById('fc-container').classList.toggle('flipped'); }
+
+// Нова функция за превключване на анимацията
+function toggleAnimation() {
+    animationsOn = !animationsOn;
+    const inner = document.getElementById('flip-inner');
+    const icon = document.getElementById('anim-icon');
+    const text = document.getElementById('anim-text');
+    
+    if (animationsOn) {
+        inner.classList.remove('no-transition');
+        icon.innerText = "🎬";
+        text.innerText = "Анимация: ВКЛ";
+    } else {
+        inner.classList.add('no-transition');
+        icon.innerText = "⏸️";
+        text.innerText = "Анимация: ИЗКЛ";
+    }
+}
+
 window.onload = initializeApp;
 </script>
 </body>
