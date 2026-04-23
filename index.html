@@ -9,81 +9,128 @@
             --primary: #1a2a6c;
             --secondary: #b21f1f;
             --bg-color: #f0f2f5;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: var(--bg-color);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            color: #333;
+            padding: 20px; /* Prevents container touching screen edges */
+            color: var(--text-main);
         }
+
         .menu-container {
             background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px 20px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
             text-align: center;
             max-width: 400px;
-            width: 95%;
+            width: 100%;
         }
+
         h1 {
             color: var(--primary);
-            margin-bottom: 10px;
-            font-size: 1.8em;
+            margin: 0 0 8px 0;
+            font-size: 1.6rem;
+            letter-spacing: -0.5px;
         }
+
         p.subtitle {
-            color: #666;
-            margin-bottom: 30px;
+            color: var(--text-sub);
+            margin-bottom: 25px;
+            font-size: 0.95rem;
         }
+
         .menu-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            display: grid; /* Grid is often more reliable for buttons */
+            gap: 12px;
         }
+
         .nav-btn {
-            padding: 20px;
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            background: white;
+            padding: 16px;
+            border: 2px solid #edf2f7; /* Lighter border initially */
+            border-radius: 16px;
+            background: #fff;
             color: var(--primary);
             text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1em;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s ease;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
+            align-items: center; /* Horizontal layout usually works better on mobile */
+            justify-content: flex-start;
+            gap: 15px;
         }
-        .nav-btn:hover {
+
+        .nav-btn:hover, .nav-btn:active {
             background: var(--primary);
             color: white;
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(26, 42, 108, 0.2);
+            border-color: var(--primary);
+            transform: scale(1.02);
         }
+
         .icon {
-            font-size: 1.6em;
+            font-size: 1.4rem;
+            background: #f8f9fa;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: background 0.2s ease;
         }
-        .github-footer {
-    margin-top: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
 
-.github-icon {
-    width: 24px; /* Малък размер */
-    height: 24px;
-    opacity: 0.6; /* Леко прозрачно, за да не се набива на очи */
-    transition: opacity 0.3s ease;
-}
+        .nav-btn:hover .icon {
+            background: rgba(255,255,255,0.1);
+        }
 
-.github-icon:hover {
-    opacity: 1; /* Светва при посочване */
-}
+        /* Footer Styling */
+        .footer-section {
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .copyright {
+            color: #b2bec3;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .github-icon {
+            width: 28px;
+            height: 28px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            filter: grayscale(1);
+        }
+
+        .github-icon:hover {
+            opacity: 1;
+            filter: none;
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 480px) {
+            .menu-container {
+                padding: 25px 15px;
+            }
+            h1 { font-size: 1.4rem; }
+            .nav-btn { padding: 12px; font-size: 0.95rem; }
+        }
     </style>
 </head>
 <body>
@@ -95,28 +142,30 @@
     <div class="menu-buttons">
         <a href="rektionen.html" class="nav-btn">
             <span class="icon">📚</span>
-            Rektionen
+            <span>Rektionen</span>
         </a>
 
         <a href="b1_l1.html" class="nav-btn">
             <span class="icon">🏥</span>
-            Krank oder gesund? (B1 L1)
+            <span>Krank oder gesund? (B1 L1)</span>
         </a>
+
         <a href="b1_l2.html" class="nav-btn">
             <span class="icon">🩴</span>
-            Urlaubsspaß (B1 L2)
+            <span>Urlaubsspaß (B1 L2)</span>
         </a>
+
         <a href="b1_l3.html" class="nav-btn">
             <span class="icon">😀</span>
-            Menschen, Menschen ... (B1 L3)
+            <span>Menschen, Menschen... (B1 L3)</span>
         </a>
     </div>
 
-    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-        <p style="color: #999; font-size: 0.85em; margin-bottom: 10px;">✣ 2026 Deutschmeister</p>
+    <div class="footer-section">
+        <span class="copyright">✣ 2026 Deutschmeister</span>
         
         <div class="github-footer">
-            <a href="https://github.com/mg-deutsch/deutsch" target="_blank" title="GitHub Repository">
+            <a href="https://github.com/mg-deutsch/deutsch" target="_blank" title="GitHub">
                 <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" class="github-icon">
             </a>
         </div>
